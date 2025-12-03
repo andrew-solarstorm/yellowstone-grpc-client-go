@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/andrew-solarstorm/yellowstone-grpc-client-go"
 	pb "github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
@@ -50,37 +51,31 @@ func SubscribeSlot(endpoint string, token string) {
 
 	fmt.Println("Listening for updates...")
 
-	for {
-		msg, err := stream.Recv()
-		if err != nil {
-			log.Printf("⚡ Stream error: %v", err)
-			break
-		}
-
-		switch update := msg.GetUpdateOneof().(type) {
+	go grpcClient.Start(stream, func(update *pb.SubscribeUpdate) error {
+		switch update.GetUpdateOneof().(type) {
 		case *pb.SubscribeUpdate_Slot:
-			fmt.Printf("📦 Slot: %d\n", update.Slot.Slot)
+			fmt.Printf("📦 Slot: %d\n", update.GetSlot().Slot)
 
 		case *pb.SubscribeUpdate_Account:
-			fmt.Printf("🔹 Account update: %s\n", update.Account.Account.Pubkey)
+			fmt.Printf("🔹 Account update: %s\n", update.GetAccount().Account.Pubkey)
 
 		case *pb.SubscribeUpdate_Transaction:
-			fmt.Printf("🔹 Transaction update\n")
+			fmt.Printf("🔹 Transaction update: %s\n", update.GetTransaction().Transaction.Signature)
 
 		case *pb.SubscribeUpdate_Block:
-			fmt.Printf("🔹 Block update: slot=%d\n", update.Block.Slot)
+			fmt.Printf("🔹 Block update: slot=%d\n", update.GetBlock().Slot)
 
 		case *pb.SubscribeUpdate_Ping:
-			continue
+			return nil
 
 		case *pb.SubscribeUpdate_Pong:
-			continue
+			return nil
 
 		case *pb.SubscribeUpdate_BlockMeta:
-			fmt.Printf("🔹 BlockMeta update: slot=%d\n", update.BlockMeta.Slot)
+			fmt.Printf("🔹 BlockMeta update: slot=%d\n", update.GetBlockMeta().Slot)
 
 		case *pb.SubscribeUpdate_Entry:
-			fmt.Printf("🔹 Entry update: slot=%d\n", update.Entry.Slot)
+			fmt.Printf("🔹 Entry update: slot=%d\n", update.GetEntry().Slot)
 
 		case nil:
 			fmt.Println("⚠️  Empty update")
@@ -88,7 +83,15 @@ func SubscribeSlot(endpoint string, token string) {
 		default:
 			fmt.Printf("🔹 Other: %T\n", update)
 		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("Error starting client: %v", err)
 	}
+
+	fmt.Println("Listening for updates...")
+	time.Sleep(10 * time.Second)
+	grpcClient.Close()
 }
 
 func main() {

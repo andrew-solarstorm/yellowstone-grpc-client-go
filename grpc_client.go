@@ -12,6 +12,8 @@ type GeyserGrpcClient struct {
 	Health grpc_health_v1.HealthClient
 	Geyser pb.GeyserClient
 	conn   *grpc.ClientConn
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func NewGeyserGrpcClient(
@@ -19,14 +21,37 @@ func NewGeyserGrpcClient(
 	geyser pb.GeyserClient,
 	conn *grpc.ClientConn,
 ) *GeyserGrpcClient {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &GeyserGrpcClient{
 		Health: health,
 		Geyser: geyser,
 		conn:   conn,
+		ctx:    ctx,
+		cancel: cancel,
+	}
+}
+
+func (c *GeyserGrpcClient) Start(stream pb.Geyser_SubscribeClient, fn func(*pb.SubscribeUpdate) error) error {
+	defer c.cancel()
+	for {
+		select {
+		case <-c.ctx.Done():
+			return nil
+		default:
+			msg, err := stream.Recv()
+			if err != nil {
+				return err
+			}
+
+			if err := fn(msg); err != nil {
+				return err
+			}
+		}
 	}
 }
 
 func (c *GeyserGrpcClient) Close() error {
+	c.cancel()
 	if c.conn != nil {
 		return c.conn.Close()
 	}
