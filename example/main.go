@@ -37,6 +37,8 @@ func main() {
 		methods.SubscribeBlocks(endpoint, token)
 	case "block_meta", "blockmeta", "meta":
 		methods.SubscribeBlockMeta(endpoint, token)
+	case "token_sniper", "sniper", "token":
+		methods.TokenSniper(endpoint, token)
 	default:
 		fmt.Println("Available examples:")
 		fmt.Println("  slot")
@@ -44,6 +46,7 @@ func main() {
 		fmt.Println("  transaction")
 		fmt.Println("  block")
 		fmt.Println("  block_meta")
+		fmt.Println("  token_sniper")
 		fmt.Println("\nUsage: go run . [example]")
 		os.Exit(1)
 	}
