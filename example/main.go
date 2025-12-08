@@ -31,6 +31,8 @@ func main() {
 		methods.SubscribeSlot(endpoint, token)
 	case "account", "accounts":
 		methods.SubscribeAccounts(endpoint, token)
+	case "account_owner", "owner":
+		methods.SubscribeAccountsByOwner(endpoint, token)
 	case "transaction", "transactions", "tx":
 		methods.SubscribeTransactions(endpoint, token)
 	case "block", "blocks":
@@ -43,6 +45,7 @@ func main() {
 		fmt.Println("Available examples:")
 		fmt.Println("  slot")
 		fmt.Println("  account")
+		fmt.Println("  account_owner")
 		fmt.Println("  transaction")
 		fmt.Println("  block")
 		fmt.Println("  block_meta")

@@ -2,7 +2,6 @@ package methods
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -11,7 +10,6 @@ import (
 	yellowstone "github.com/andrew-solarstorm/yellowstone-grpc-client-go"
 	pb "github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
 	"github.com/gagliardetto/solana-go"
-	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -28,16 +26,13 @@ func TokenSniper(endpoint string, token string) {
 		log.Fatalf("Error building client: %v", err)
 	}
 
-	pool, err := x509.SystemCertPool()
-	if err != nil {
-		log.Fatalf("Error loading system cert pool: %v", err)
+	clientBuilder := builder.XToken(token).KeepAliveWhileIdle(true)
+
+	if tlsConfig := getTLSConfig(endpoint); tlsConfig != nil {
+		clientBuilder = clientBuilder.TLSConfig(tlsConfig)
 	}
 
-	grpcClient, err := builder.
-		XToken(token).
-		TLSConfig(credentials.NewClientTLSFromCert(pool, "")).
-		KeepAliveWhileIdle(true).
-		Connect(context.Background())
+	grpcClient, err := clientBuilder.Connect(context.Background())
 	if err != nil {
 		log.Fatalf("Error connecting: %v", err)
 	}

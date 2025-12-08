@@ -2,14 +2,12 @@ package methods
 
 import (
 	"context"
-	"crypto/x509"
 	"fmt"
 	"log"
 	"time"
 
 	yellowstone "github.com/andrew-solarstorm/yellowstone-grpc-client-go"
 	pb "github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
-	"google.golang.org/grpc/credentials"
 )
 
 func SubscribeSlot(endpoint string, token string) {
@@ -18,20 +16,15 @@ func SubscribeSlot(endpoint string, token string) {
 		log.Fatalf("Error building client: %v", err)
 	}
 
-	pool, err := x509.SystemCertPool()
-	if err != nil {
-		log.Fatalf("Error loading system cert pool: %v", err)
+	clientBuilder := builder.XToken(token).KeepAliveWhileIdle(true)
+
+	if tlsConfig := getTLSConfig(endpoint); tlsConfig != nil {
+		clientBuilder = clientBuilder.TLSConfig(tlsConfig)
 	}
-	tlsConfig := credentials.NewClientTLSFromCert(pool, "")
 
-	grpcClient, err := builder.
-		XToken(token).
-		TLSConfig(tlsConfig).
-		KeepAliveWhileIdle(true).
-		Connect(context.Background())
-
+	grpcClient, err := clientBuilder.Connect(context.Background())
 	if err != nil {
-		log.Fatalf("Error connecting to geyser: %v", err)
+		log.Fatalf("Error connecting: %v", err)
 	}
 	defer grpcClient.Close()
 
