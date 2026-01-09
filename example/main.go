@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/andrew-solarstorm/yellowstone-grpc-client-go/example/debug"
 	"github.com/andrew-solarstorm/yellowstone-grpc-client-go/example/methods"
 	"github.com/joho/godotenv"
 )
@@ -41,6 +42,10 @@ func main() {
 		methods.SubscribeBlockMeta(endpoint, token)
 	case "token_sniper", "sniper", "token":
 		methods.TokenSniper(endpoint, token)
+
+	case "block_debug":
+		debug.SubscribeBlocks(endpoint, token)
+
 	default:
 		fmt.Println("Available examples:")
 		fmt.Println("  slot")

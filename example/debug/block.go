@@ -1,4 +1,4 @@
-package methods
+package debug
 
 import (
 	"context"
@@ -8,10 +8,9 @@ import (
 
 	yellowstone "github.com/andrew-solarstorm/yellowstone-grpc-client-go"
 	pb "github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
-	"github.com/gagliardetto/solana-go"
 )
 
-func SubscribeAccounts(endpoint string, token string) {
+func SubscribeBlocks(endpoint string, token string) {
 	builder, err := yellowstone.BuildFromShared(endpoint)
 	if err != nil {
 		log.Fatalf("Error building client: %v", err)
@@ -30,12 +29,8 @@ func SubscribeAccounts(endpoint string, token string) {
 	defer grpcClient.Close()
 
 	req := &pb.SubscribeRequest{
-		Accounts: map[string]*pb.SubscribeRequestFilterAccounts{
-			"account_filter": {
-				Account: []string{
-					solana.WrappedSol.String(),
-				},
-			},
+		Blocks: map[string]*pb.SubscribeRequestFilterBlocks{
+			"block_filter": {},
 		},
 		Slots: map[string]*pb.SubscribeRequestFilterSlots{
 			"slot": {},
@@ -48,24 +43,16 @@ func SubscribeAccounts(endpoint string, token string) {
 		log.Fatalf("Error subscribing to geyser: %v", err)
 	}
 
-	fmt.Println("👤 Listening for account updates...")
+	fmt.Println("🧱 Listening for block updates...")
 
 	go grpcClient.Start(stream, func(update *pb.SubscribeUpdate) error {
 		switch update.GetUpdateOneof().(type) {
-		case *pb.SubscribeUpdate_Account:
-			accountUpdate := update.GetAccount()
-			account := accountUpdate.Account
+		case *pb.SubscribeUpdate_Block:
+			blockUpdate := update.GetBlock()
 
-			fmt.Printf("\n👤 Account Update:\n")
-			fmt.Printf("   Pubkey: %s\n", solana.PublicKeyFromBytes(account.Pubkey).String())
-			fmt.Printf("   Owner: %s\n", solana.PublicKeyFromBytes(account.Owner).String())
-			fmt.Printf("   Lamports: %d\n", account.Lamports)
-			fmt.Printf("   Executable: %v\n", account.Executable)
-			fmt.Printf("   Rent Epoch: %d\n", account.RentEpoch)
-			fmt.Printf("   Write Version: %d\n", account.WriteVersion)
-			fmt.Printf("   Data Length: %d bytes\n", len(account.Data))
-			fmt.Printf("   Slot: %d\n", accountUpdate.Slot)
-			fmt.Printf("   Is Startup: %v\n", accountUpdate.IsStartup)
+			if blockUpdate.BlockTime == nil {
+				fmt.Printf("\n🧱 BlockTime Empty:\n")
+			}
 
 		case *pb.SubscribeUpdate_Slot:
 			slot := update.GetSlot()
@@ -88,5 +75,5 @@ func SubscribeAccounts(endpoint string, token string) {
 
 	time.Sleep(30 * time.Second)
 	grpcClient.Close()
-	fmt.Println("✅ Account subscription example completed")
+	fmt.Println("✅ Block subscription example completed")
 }

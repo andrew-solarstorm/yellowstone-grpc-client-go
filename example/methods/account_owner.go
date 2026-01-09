@@ -7,6 +7,7 @@ import (
 	"time"
 
 	yellowstone "github.com/andrew-solarstorm/yellowstone-grpc-client-go"
+	"github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
 	pb "github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
 	"github.com/gagliardetto/solana-go"
 )
@@ -29,15 +30,23 @@ func SubscribeAccountsByOwner(endpoint string, token string) {
 	}
 	defer grpcClient.Close()
 
-	req := &pb.SubscribeRequest{
-		Accounts: map[string]*pb.SubscribeRequestFilterAccounts{
-			"token_program_accounts": {
-				Owner: []string{
-					"LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+	req := &proto.SubscribeRequest{
+		Accounts: map[string]*proto.SubscribeRequestFilterAccounts{
+			"sliced": {
+				Owner: []string{"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"},
+				Filters: []*proto.SubscribeRequestFilterAccountsFilter{
+					{
+						Filter: &proto.SubscribeRequestFilterAccountsFilter_Datasize{
+							Datasize: 165,
+						},
+					},
 				},
 			},
 		},
-		Slots: map[string]*pb.SubscribeRequestFilterSlots{"slot": {}},
+		AccountsDataSlice: []*proto.SubscribeRequestAccountsDataSlice{
+			{Offset: 0, Length: 32},  // First 32 bytes (mint)
+			{Offset: 32, Length: 32}, // Next 32 bytes (owner)
+		},
 	}
 
 	stream, err := grpcClient.SubscribeWithRequest(context.Background(), req)
@@ -66,6 +75,10 @@ func SubscribeAccountsByOwner(endpoint string, token string) {
 				fmt.Printf("   Data Length: %d bytes\n", len(account.Data))
 				fmt.Printf("   Slot: %d\n", accountUpdate.Slot)
 				fmt.Printf("   Write Version: %d\n", account.WriteVersion)
+			}
+			if len(account.Data) == 64 {
+				fmt.Printf("   Mint: %s\n", solana.PublicKeyFromBytes(account.Data[:32]))
+				fmt.Printf("   Owner: %s\n", solana.PublicKeyFromBytes(account.Data[32:]))
 			}
 
 		case *pb.SubscribeUpdate_Slot:
