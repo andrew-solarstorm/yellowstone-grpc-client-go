@@ -45,6 +45,8 @@ func main() {
 
 	case "block_debug":
 		debug.SubscribeBlocks(endpoint, token)
+	case "detect_missing", "missing_blocks", "missing":
+		debug.DetectMissingBlocks(endpoint, token)
 
 	default:
 		fmt.Println("Available examples:")
@@ -55,6 +57,8 @@ func main() {
 		fmt.Println("  block")
 		fmt.Println("  block_meta")
 		fmt.Println("  token_sniper")
+		fmt.Println("  block_debug")
+		fmt.Println("  detect_missing (detects missing blocks)")
 		fmt.Println("\nUsage: go run . [example]")
 		os.Exit(1)
 	}

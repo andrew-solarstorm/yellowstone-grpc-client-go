@@ -2,13 +2,15 @@ package methods
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"log"
-	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	yellowstone "github.com/andrew-solarstorm/yellowstone-grpc-client-go"
 	pb "github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
+	"github.com/gagliardetto/solana-go"
 )
 
 func SubscribeTransactions(endpoint string, token string) {
@@ -32,7 +34,9 @@ func SubscribeTransactions(endpoint string, token string) {
 	req := &pb.SubscribeRequest{
 		Transactions: map[string]*pb.SubscribeRequestFilterTransactions{
 			"tx_filter": {
-				AccountInclude: []string{},
+				AccountInclude: []string{
+					"FLUXubRmkEi2q6K3Y9kBPg9248ggaZVsoSFhtJHSrm1X",
+				},
 			},
 		},
 	}
@@ -51,8 +55,12 @@ func SubscribeTransactions(endpoint string, token string) {
 			txUpdate := update.GetTransaction()
 			tx := txUpdate.Transaction
 
+			if len(tx.Meta.GetPostTokenBalances()) == 0 {
+				return nil
+			}
+
 			fmt.Printf("\n💸 Transaction Update:\n")
-			fmt.Printf("   Signature: %s\n", base64.StdEncoding.EncodeToString(tx.Signature))
+			fmt.Printf("   Signature: %s\n", solana.SignatureFromBytes(tx.Signature).String())
 			fmt.Printf("   Slot: %d\n", txUpdate.Slot)
 			fmt.Printf("   Is Vote: %v\n", tx.IsVote)
 
@@ -63,8 +71,10 @@ func SubscribeTransactions(endpoint string, token string) {
 				} else {
 					fmt.Printf("   Status: Success\n")
 				}
-				fmt.Printf("   Pre Balances: %v\n", tx.Meta.PreBalances)
-				fmt.Printf("   Post Balances: %v\n", tx.Meta.PostBalances)
+				fmt.Printf("   Pre Balances: %v\n", tx.Meta.GetPreTokenBalances())
+				fmt.Printf("   Post Balances: %v\n", tx.Meta.GetPostTokenBalances())
+
+				fmt.Println("    POST Ballances: ", tx.Meta.GetPostBalances())
 				fmt.Printf("   Compute Units Consumed: %d\n", tx.Meta.ComputeUnitsConsumed)
 			}
 
@@ -92,8 +102,10 @@ func SubscribeTransactions(endpoint string, token string) {
 	if err != nil {
 		log.Fatalf("Error starting client: %v", err)
 	}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	time.Sleep(30 * time.Second)
+	<- sigChan
 	grpcClient.Close()
 	fmt.Println("✅ Transaction subscription example completed")
 }

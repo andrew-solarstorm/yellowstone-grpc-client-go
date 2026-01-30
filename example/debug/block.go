@@ -32,9 +32,9 @@ func SubscribeBlocks(endpoint string, token string) {
 		Blocks: map[string]*pb.SubscribeRequestFilterBlocks{
 			"block_filter": {},
 		},
-		Slots: map[string]*pb.SubscribeRequestFilterSlots{
-			"slot": {},
-		},
+		// Slots: map[string]*pb.SubscribeRequestFilterSlots{
+		// 	"slot": {},
+		// },
 	}
 
 	ctx := context.Background()
@@ -52,6 +52,8 @@ func SubscribeBlocks(endpoint string, token string) {
 
 			if blockUpdate.BlockTime == nil {
 				fmt.Printf("\n🧱 BlockTime Empty:\n")
+			}else{
+				fmt.Println("Blocktime: ", blockUpdate.BlockTime)
 			}
 
 		case *pb.SubscribeUpdate_Slot:
