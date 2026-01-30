@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"sync"
-	"time"
+	"syscall"
 
 	yellowstone "github.com/andrew-solarstorm/yellowstone-grpc-client-go"
 	pb "github.com/andrew-solarstorm/yellowstone-grpc-client-go/proto"
@@ -110,8 +112,10 @@ func DetectMissingBlocks(endpoint string, token string) {
 
 	// Run for a longer time to detect missing blocks
 	fmt.Println("📊 Monitoring for missing blocks (Press Ctrl+C to stop)...")
-	time.Sleep(5 * time.Minute)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	<-sigChan
 	grpcClient.Close()
 	fmt.Println("\n✅ Missing block detection completed")
 }
