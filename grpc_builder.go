@@ -33,7 +33,6 @@ type GeyserGrpcBuilder struct {
 	http2AdaptiveWindow     bool
 	initialConnWindowSize   int
 	initialStreamWindowSize int
-	useTLS                  bool
 	tlsConfig               *credentials.TransportCredentials
 }
 
@@ -118,11 +117,11 @@ func (b *GeyserGrpcBuilder) Timeout(dur time.Duration) *GeyserGrpcBuilder {
 	return b
 }
 
-func (b *GeyserGrpcBuilder) TLSConfig(config credentials.TransportCredentials) *GeyserGrpcBuilder {
-	b.tlsConfig = &config
-	b.useTLS = true
-	return b
-}
+// func (b *GeyserGrpcBuilder) TLSConfig(config credentials.TransportCredentials) *GeyserGrpcBuilder {
+// 	b.tlsConfig = &config
+// 	b.useTLS = true
+// 	return b
+// }
 
 func (b *GeyserGrpcBuilder) SendCompressed(enable bool) *GeyserGrpcBuilder {
 	b.sendCompressed = enable
